@@ -1,0 +1,299 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// CLINIC (tenant)
+// ─────────────────────────────────────────────
+
+model Clinic {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  modules     ClinicModule[]
+  clinicUsers ClinicUser[]
+  patients    Patient[]
+  services    Service[]
+  appointments Appointment[]
+  encounters  Encounter[]
+  payments    Payment[]
+  auditLogs   AuditLog[]
+  resources   Resource[]
+
+  @@map("clinics")
+}
+
+model ClinicModule {
+  id        String  @id @default(cuid())
+  clinicId  String
+  moduleKey String  // "dental", "physio", etc.
+  enabled   Boolean @default(true)
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@unique([clinicId, moduleKey])
+  @@map("clinic_modules")
+}
+
+// ─────────────────────────────────────────────
+// USER + CLINIC MEMBERSHIP
+// ─────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  clinicUsers  ClinicUser[]
+  auditLogs    AuditLog[]
+
+  @@map("users")
+}
+
+enum ClinicRole {
+  OWNER
+  ADMIN
+  RECEPTIONIST
+  DOCTOR
+  ASSISTANT
+}
+
+model ClinicUser {
+  id          String     @id @default(cuid())
+  clinicId    String
+  userId      String
+  role        ClinicRole
+  permissions Json       @default("[]")  // string[] of permission keys
+  specialties Json       @default("[]")  // string[] e.g. ["dental"]
+  isActive    Boolean    @default(true)
+  inviteToken String?    @unique
+  invitedAt   DateTime?
+  joinedAt    DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+  encounters   Encounter[]
+  availability DoctorAvailability[]
+
+  @@unique([clinicId, userId])
+  @@map("clinic_users")
+}
+
+// ─────────────────────────────────────────────
+// DOCTOR AVAILABILITY
+// ─────────────────────────────────────────────
+
+model DoctorAvailability {
+  id           String  @id @default(cuid())
+  clinicUserId String
+  dayOfWeek    Int     // 0=Sunday, 1=Monday ... 6=Saturday
+  startTime    String  // "09:00"
+  endTime      String  // "17:00"
+
+  clinicUser ClinicUser @relation(fields: [clinicUserId], references: [id], onDelete: Cascade)
+
+  @@map("doctor_availability")
+}
+
+// ─────────────────────────────────────────────
+// RESOURCES (rooms, chairs)
+// ─────────────────────────────────────────────
+
+model Resource {
+  id        String  @id @default(cuid())
+  clinicId  String
+  name      String
+  type      String  // "room", "chair", etc.
+  isActive  Boolean @default(true)
+
+  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@map("resources")
+}
+
+// ─────────────────────────────────────────────
+// PATIENTS
+// ─────────────────────────────────────────────
+
+model Patient {
+  id          String    @id @default(cuid())
+  clinicId    String
+  firstName   String
+  lastName    String
+  phone       String?
+  email       String?
+  dateOfBirth DateTime?
+  gender      String?
+  allergies   String?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+  encounters   Encounter[]
+  payments     Payment[]
+
+  @@index([clinicId])
+  @@map("patients")
+}
+
+// ─────────────────────────────────────────────
+// SERVICES
+// ─────────────────────────────────────────────
+
+model Service {
+  id          String   @id @default(cuid())
+  clinicId    String
+  moduleKey   String?  // null = general, "dental" = dental only
+  name        String
+  durationMin Int
+  price       Decimal  @db.Decimal(10, 2)
+  description String?
+  doctorId    String?  // optional: vezano za konkretnog doktora
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@map("services")
+}
+
+// ─────────────────────────────────────────────
+// APPOINTMENTS
+// ─────────────────────────────────────────────
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  ARRIVED
+  DONE
+  NO_SHOW
+  CANCELED
+}
+
+model Appointment {
+  id           String            @id @default(cuid())
+  clinicId     String
+  patientId    String
+  doctorId     String            // clinicUser.id
+  serviceId    String?
+  resourceId   String?
+  startAt      DateTime
+  endAt        DateTime
+  status       AppointmentStatus @default(SCHEDULED)
+  notes        String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  clinic    Clinic     @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient   Patient    @relation(fields: [patientId], references: [id])
+  doctor    ClinicUser @relation(fields: [doctorId], references: [id])
+  service   Service?   @relation(fields: [serviceId], references: [id])
+  resource  Resource?  @relation(fields: [resourceId], references: [id])
+  encounter Encounter?
+  payments  Payment[]
+
+  @@index([clinicId, startAt])
+  @@index([clinicId, doctorId, startAt])
+  @@map("appointments")
+}
+
+// ─────────────────────────────────────────────
+// ENCOUNTERS (EHR-lite)
+// ─────────────────────────────────────────────
+
+enum EncounterVisibility {
+  STAFF_ONLY
+  PATIENT_VISIBLE
+}
+
+model Encounter {
+  id             String              @id @default(cuid())
+  clinicId       String
+  patientId      String
+  doctorId       String
+  appointmentId  String?             @unique
+  moduleKey      String              // "general", "dental", etc.
+  summary        String?
+  note           String?
+  visibility     EncounterVisibility @default(STAFF_ONLY)
+  extraData      Json                @default("{}")
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  clinic      Clinic      @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient     Patient     @relation(fields: [patientId], references: [id])
+  doctor      ClinicUser  @relation(fields: [doctorId], references: [id])
+  appointment Appointment? @relation(fields: [appointmentId], references: [id])
+
+  @@index([clinicId, patientId])
+  @@map("encounters")
+}
+
+// ─────────────────────────────────────────────
+// PAYMENTS
+// ─────────────────────────────────────────────
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  clinicId      String
+  patientId     String?
+  appointmentId String?
+  amount        Decimal       @db.Decimal(10, 2)
+  method        PaymentMethod
+  paidAt        DateTime      @default(now())
+  note          String?
+
+  clinic      Clinic       @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient     Patient?     @relation(fields: [patientId], references: [id])
+  appointment Appointment? @relation(fields: [appointmentId], references: [id])
+
+  @@map("payments")
+}
+
+// ─────────────────────────────────────────────
+// AUDIT LOG
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  clinicId   String?
+  actorId    String?
+  action     String   // "appointment.created", "patient.updated", etc.
+  entityType String
+  entityId   String
+  meta       Json     @default("{}")
+  createdAt  DateTime @default(now())
+
+  clinic Clinic? @relation(fields: [clinicId], references: [id])
+  actor  User?   @relation(fields: [actorId], references: [id])
+
+  @@index([clinicId, createdAt])
+  @@map("audit_logs")
+}
