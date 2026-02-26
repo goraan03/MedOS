@@ -1,10 +1,13 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, Stethoscope, UserRound, Calendar } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuthStore } from '../../store/auth.store';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/appointments', icon: Calendar, label: 'Appointments' },
+  { to: '/patients', icon: UserRound, label: 'Patients' },
+  { to: '/services', icon: Stethoscope, label: 'Services' },
   { to: '/clinic/staff', icon: Users, label: 'Staff' },
 ];
 

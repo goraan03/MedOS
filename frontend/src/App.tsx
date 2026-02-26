@@ -5,6 +5,9 @@ import { RegisterPage } from './pages/auth/RegisterPage';
 import { AppLayout } from './components/layout/AppLayout';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { StaffPage } from './pages/clinic/StaffPage';
+import { PatientsPage } from './pages/patients/PatientsPage';
+import { ServicesPage } from './pages/services/ServicesPage';
+import { AppointmentsPage } from './pages/appointments/AppointmentsPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.accessToken);
@@ -25,6 +28,9 @@ export function App() {
         <Route path="/" element={<PrivateRoute><AppLayout /></PrivateRoute>}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="patients" element={<PatientsPage />} />
+          <Route path="services" element={<ServicesPage />} />
+          <Route path="appointments" element={<AppointmentsPage />} />
           <Route path="clinic/staff" element={<StaffPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
