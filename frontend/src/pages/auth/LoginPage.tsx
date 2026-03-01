@@ -23,9 +23,16 @@ export function LoginPage() {
   const mutation = useMutation({
     mutationFn: authApi.login,
     onSuccess: (data) => {
-      setAuth({ accessToken: data.accessToken, user: data.user, clinic: data.clinic, role: data.role as ClinicRole });
-      navigate('/dashboard');
-    },
+    setAuth({
+      accessToken: data.accessToken,
+      user: data.user,
+      clinic: data.clinic,
+      role: data.role as ClinicRole,
+      modules: data.modules,
+      allowedModules: data.allowedModules,
+    });
+    navigate('/dashboard');
+  },
     onError: () => setError('root', { message: 'Invalid credentials or clinic slug' }),
   });
 

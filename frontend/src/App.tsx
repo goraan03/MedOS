@@ -8,6 +8,8 @@ import { StaffPage } from './pages/clinic/StaffPage';
 import { PatientsPage } from './pages/patients/PatientsPage';
 import { ServicesPage } from './pages/services/ServicesPage';
 import { AppointmentsPage } from './pages/appointments/AppointmentsPage';
+import { PatientDetailPage } from './pages/patients/PatientDetailPage';
+import { ClinicSettingsPage } from './pages/clinic/ClinicSettingsPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.accessToken);
@@ -32,6 +34,8 @@ export function App() {
           <Route path="services" element={<ServicesPage />} />
           <Route path="appointments" element={<AppointmentsPage />} />
           <Route path="clinic/staff" element={<StaffPage />} />
+          <Route path="patients/:id" element={<PatientDetailPage />} />
+          <Route path="clinic/settings" element={<ClinicSettingsPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

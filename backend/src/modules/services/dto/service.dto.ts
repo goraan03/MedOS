@@ -1,6 +1,10 @@
 import {
-  IsString, IsNotEmpty, IsOptional,
-  IsNumber, IsPositive, IsBoolean,
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  IsPositive,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 

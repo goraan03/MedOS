@@ -13,33 +13,36 @@ datasource db {
 // ─────────────────────────────────────────────
 
 model Clinic {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  settings  Json     @default("{}")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  pib           String?  @unique
+  isPolyclinic  Boolean  @default(false)
+  settings      Json     @default("{}")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  modules     ClinicModule[]
-  clinicUsers ClinicUser[]
-  patients    Patient[]
-  services    Service[]
-  appointments Appointment[]
-  encounters  Encounter[]
-  payments    Payment[]
-  auditLogs   AuditLog[]
-  resources   Resource[]
+  modules       ClinicModule[]
+  users         ClinicUser[]
+  patients      Patient[]
+  services      Service[]
+  appointments  Appointment[]
+  encounters    Encounter[]
+  payments      Payment[]
+  resources     Resource[]
+  auditLogs     AuditLog[]
 
   @@map("clinics")
 }
 
 model ClinicModule {
-  id        String  @id @default(cuid())
-  clinicId  String
-  moduleKey String  // "dental", "physio", etc.
-  enabled   Boolean @default(true)
+  id          String   @id @default(cuid())
+  clinicId    String
+  moduleKey   String
+  enabled     Boolean  @default(true)
+  enabledAt   DateTime @default(now())
 
-  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  clinic      Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
 
   @@unique([clinicId, moduleKey])
   @@map("clinic_modules")
@@ -73,24 +76,23 @@ enum ClinicRole {
 }
 
 model ClinicUser {
-  id          String     @id @default(cuid())
-  clinicId    String
-  userId      String
-  role        ClinicRole
-  permissions Json       @default("[]")  // string[] of permission keys
-  specialties Json       @default("[]")  // string[] e.g. ["dental"]
-  isActive    Boolean    @default(true)
-  inviteToken String?    @unique
-  invitedAt   DateTime?
-  joinedAt    DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id             String    @id @default(cuid())
+  clinicId       String
+  userId         String
+  role           ClinicRole
+  allowedModules String[]  @default([])
+  permissions    String[]  @default([])
+  isActive       Boolean   @default(true)
+  inviteToken    String?   @unique
+  invitedAt      DateTime?
+  joinedAt       DateTime?
+  createdAt      DateTime  @default(now())
 
-  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  appointments Appointment[]
-  encounters   Encounter[]
-  availability DoctorAvailability[]
+  clinic              Clinic               @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments        Appointment[]
+  encounters          Encounter[]
+  doctorAvailability  DoctorAvailability[]  // ← dodaj ovo
 
   @@unique([clinicId, userId])
   @@map("clinic_users")

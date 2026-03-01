@@ -14,17 +14,22 @@ export class UpdateClinicDto {
   @IsOptional()
   name?: string;
 
+  @IsString()
+  @IsOptional()
+  pib?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isPolyclinic?: boolean;
+
   @IsOptional()
   settings?: Record<string, unknown>;
 }
 
-export class ToggleModuleDto {
-  @IsString()
-  @IsNotEmpty()
-  moduleKey: string;
-
-  @IsBoolean()
-  enabled: boolean;
+export class UpdateModulesDto {
+  @IsArray()
+  @IsString({ each: true })
+  modules: string[];
 }
 
 export class InviteStaffDto {
@@ -45,5 +50,5 @@ export class InviteStaffDto {
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
-  specialties?: string[];
+  allowedModules?: string[];
 }

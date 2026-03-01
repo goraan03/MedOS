@@ -4,7 +4,11 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { CreateAppointmentDto, UpdateAppointmentDto, GetAppointmentsDto } from './dto/appointment.dto';
+import {
+  CreateAppointmentDto,
+  UpdateAppointmentDto,
+  GetAppointmentsDto,
+} from './dto/appointment.dto';
 
 @Injectable()
 export class AppointmentsService {
@@ -16,14 +20,21 @@ export class AppointmentsService {
       where: {
         clinicId,
         ...(doctorId && { doctorId }),
-        ...(from && to && {
-          startAt: { gte: new Date(from), lte: new Date(to) },
-        }),
+        ...(from &&
+          to && {
+            startAt: { gte: new Date(from), lte: new Date(to) },
+          }),
       },
       include: {
-        patient: { select: { id: true, firstName: true, lastName: true, phone: true } },
-        doctor: { include: { user: { select: { firstName: true, lastName: true } } } },
-        service: { select: { id: true, name: true, durationMin: true, price: true } },
+        patient: {
+          select: { id: true, firstName: true, lastName: true, phone: true },
+        },
+        doctor: {
+          include: { user: { select: { firstName: true, lastName: true } } },
+        },
+        service: {
+          select: { id: true, name: true, durationMin: true, price: true },
+        },
         resource: true,
       },
       orderBy: { startAt: 'asc' },
@@ -35,7 +46,11 @@ export class AppointmentsService {
       where: { id: appointmentId, clinicId },
       include: {
         patient: true,
-        doctor: { include: { user: { select: { firstName: true, lastName: true, email: true } } } },
+        doctor: {
+          include: {
+            user: { select: { firstName: true, lastName: true, email: true } },
+          },
+        },
         service: true,
         resource: true,
       },
@@ -68,12 +83,18 @@ export class AppointmentsService {
       include: {
         patient: { select: { id: true, firstName: true, lastName: true } },
         service: { select: { id: true, name: true } },
-        doctor: { include: { user: { select: { firstName: true, lastName: true } } } },
+        doctor: {
+          include: { user: { select: { firstName: true, lastName: true } } },
+        },
       },
     });
   }
 
-  async update(clinicId: string, appointmentId: string, dto: UpdateAppointmentDto) {
+  async update(
+    clinicId: string,
+    appointmentId: string,
+    dto: UpdateAppointmentDto,
+  ) {
     const existing = await this.findOne(clinicId, appointmentId);
 
     const startAt = dto.startAt ? new Date(dto.startAt) : existing.startAt;
@@ -81,7 +102,13 @@ export class AppointmentsService {
     const doctorId = dto.doctorId ?? existing.doctorId;
 
     if (dto.startAt || dto.endAt || dto.doctorId) {
-      await this.checkDoctorOverlap(clinicId, doctorId, startAt, endAt, appointmentId);
+      await this.checkDoctorOverlap(
+        clinicId,
+        doctorId,
+        startAt,
+        endAt,
+        appointmentId,
+      );
     }
 
     return this.prisma.appointment.update({
@@ -117,12 +144,11 @@ export class AppointmentsService {
         doctorId,
         id: excludeId ? { not: excludeId } : undefined,
         status: { notIn: ['CANCELED', 'NO_SHOW'] },
-        OR: [
-          { startAt: { lt: endAt }, endAt: { gt: startAt } },
-        ],
+        OR: [{ startAt: { lt: endAt }, endAt: { gt: startAt } }],
       },
     });
-    if (overlap) throw new ConflictException('Doctor has overlapping appointment');
+    if (overlap)
+      throw new ConflictException('Doctor has overlapping appointment');
   }
 
   private async checkResourceOverlap(
@@ -138,11 +164,10 @@ export class AppointmentsService {
         resourceId,
         id: excludeId ? { not: excludeId } : undefined,
         status: { notIn: ['CANCELED', 'NO_SHOW'] },
-        OR: [
-          { startAt: { lt: endAt }, endAt: { gt: startAt } },
-        ],
+        OR: [{ startAt: { lt: endAt }, endAt: { gt: startAt } }],
       },
     });
-    if (overlap) throw new ConflictException('Resource has overlapping appointment');
+    if (overlap)
+      throw new ConflictException('Resource has overlapping appointment');
   }
 }

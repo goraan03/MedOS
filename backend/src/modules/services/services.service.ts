@@ -6,9 +6,13 @@ import { CreateServiceDto, UpdateServiceDto } from './dto/service.dto';
 export class ServicesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(clinicId: string) {
+  async findAll(clinicId: string, moduleKey?: string) {
     return this.prisma.service.findMany({
-      where: { clinicId, isActive: true },
+      where: {
+        clinicId,
+        isActive: true,
+        ...(moduleKey && { moduleKey }),
+      },
       orderBy: { name: 'asc' },
     });
   }

@@ -1,6 +1,5 @@
-
-import type { Service } from '@/types/service.types';
 import { apiClient } from '../lib/api-client';
+import { type Service } from '../types/service.types';
 
 export interface CreateServiceData {
   name: string;
@@ -13,6 +12,8 @@ export interface CreateServiceData {
 export const servicesApi = {
   list: () =>
     apiClient.get<Service[]>('/services').then(r => r.data),
+  listByModule: (moduleKey: string) =>
+    apiClient.get<Service[]>('/services', { params: { moduleKey } }).then(r => r.data),
   create: (data: CreateServiceData) =>
     apiClient.post<Service>('/services', data).then(r => r.data),
   update: (id: string, data: Partial<CreateServiceData>) =>

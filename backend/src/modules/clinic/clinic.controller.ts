@@ -11,16 +11,18 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ClinicRole } from '@prisma/client';
-
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { TenantGuard } from '../../common/guards/tenant.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/rbac.decorators';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../common/types/jwt.types';
-
 import { ClinicService } from './clinic.service';
-import { UpdateClinicDto, ToggleModuleDto, InviteStaffDto } from './dto/clinic.dto';
+import {
+  UpdateClinicDto,
+  UpdateModulesDto,
+  InviteStaffDto,
+} from './dto/clinic.dto';
 
 @UseGuards(JwtAuthGuard, TenantGuard, RolesGuard)
 @Controller('clinic')
@@ -33,15 +35,23 @@ export class ClinicController {
   }
 
   @Patch()
-  @Roles(ClinicRole.OWNER, ClinicRole.ADMIN)
+  @Roles(ClinicRole.OWNER)
   updateClinic(@CurrentUser() user: JwtPayload, @Body() dto: UpdateClinicDto) {
     return this.clinicService.updateClinic(user.clinicId, dto);
   }
 
+  @Get('modules')
+  getModules(@CurrentUser() user: JwtPayload) {
+    return this.clinicService.getModules(user.clinicId);
+  }
+
   @Patch('modules')
-  @Roles(ClinicRole.OWNER, ClinicRole.ADMIN)
-  toggleModule(@CurrentUser() user: JwtPayload, @Body() dto: ToggleModuleDto) {
-    return this.clinicService.toggleModule(user.clinicId, dto);
+  @Roles(ClinicRole.OWNER)
+  updateModules(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: UpdateModulesDto,
+  ) {
+    return this.clinicService.updateModules(user.clinicId, dto);
   }
 
   @Get('staff')
@@ -56,7 +66,7 @@ export class ClinicController {
   }
 
   @Patch('staff/:id/role')
-  @Roles(ClinicRole.OWNER, ClinicRole.ADMIN)
+  @Roles(ClinicRole.OWNER)
   updateRole(
     @CurrentUser() user: JwtPayload,
     @Param('id') staffId: string,
@@ -66,9 +76,12 @@ export class ClinicController {
   }
 
   @Delete('staff/:id')
-  @Roles(ClinicRole.OWNER, ClinicRole.ADMIN)
+  @Roles(ClinicRole.OWNER)
   @HttpCode(HttpStatus.NO_CONTENT)
-  deactivateStaff(@CurrentUser() user: JwtPayload, @Param('id') staffId: string) {
+  deactivateStaff(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') staffId: string,
+  ) {
     return this.clinicService.deactivateStaff(user.clinicId, staffId);
   }
 }

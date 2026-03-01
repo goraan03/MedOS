@@ -1,13 +1,35 @@
-import { IsEmail, IsString, MinLength, IsNotEmpty } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  IsNotEmpty,
+  IsArray,
+  IsOptional,
+  IsBoolean,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
-export class RegisterDto {
-  @IsEmail()
-  email: string;
+export class ClinicRegisterDto {
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 
   @IsString()
-  @MinLength(8)
-  password: string;
+  @IsOptional()
+  pib?: string;
 
+  @IsBoolean()
+  @IsOptional()
+  isPolyclinic?: boolean;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  modules?: string[];
+}
+
+export class OwnerRegisterDto {
   @IsString()
   @IsNotEmpty()
   firstName: string;
@@ -15,10 +37,23 @@ export class RegisterDto {
   @IsString()
   @IsNotEmpty()
   lastName: string;
+}
+
+export class RegisterDto {
+  @ValidateNested()
+  @Type(() => ClinicRegisterDto)
+  clinic: ClinicRegisterDto;
+
+  @ValidateNested()
+  @Type(() => OwnerRegisterDto)
+  owner: OwnerRegisterDto;
+
+  @IsEmail()
+  email: string;
 
   @IsString()
-  @IsNotEmpty()
-  clinicName: string;
+  @MinLength(8)
+  password: string;
 }
 
 export class LoginDto {

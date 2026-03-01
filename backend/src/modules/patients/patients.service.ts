@@ -30,7 +30,14 @@ export class PatientsService {
         appointments: {
           orderBy: { startAt: 'desc' },
           take: 10,
-          include: { service: true, doctor: { include: { user: { select: { firstName: true, lastName: true } } } } },
+          include: {
+            service: true,
+            doctor: {
+              include: {
+                user: { select: { firstName: true, lastName: true } },
+              },
+            },
+          },
         },
       },
     });
@@ -40,22 +47,22 @@ export class PatientsService {
 
   async create(clinicId: string, dto: CreatePatientDto) {
     return this.prisma.patient.create({
-        data: {
+      data: {
         ...dto,
         clinicId,
         dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
-        },
+      },
     });
   }
 
   async update(clinicId: string, patientId: string, dto: UpdatePatientDto) {
     await this.findOne(clinicId, patientId);
     return this.prisma.patient.update({
-        where: { id: patientId },
-        data: {
+      where: { id: patientId },
+      data: {
         ...dto,
         dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
-        },
+      },
     });
   }
 

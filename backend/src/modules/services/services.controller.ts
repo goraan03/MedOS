@@ -1,6 +1,15 @@
 import {
-  Controller, Get, Post, Patch, Delete,
-  Body, Param, UseGuards, HttpCode, HttpStatus,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { ClinicRole } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -18,8 +27,11 @@ export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}
 
   @Get()
-  findAll(@CurrentUser() user: JwtPayload) {
-    return this.servicesService.findAll(user.clinicId);
+  findAll(
+    @CurrentUser() user: JwtPayload,
+    @Query('moduleKey') moduleKey?: string,
+  ) {
+    return this.servicesService.findAll(user.clinicId, moduleKey);
   }
 
   @Get(':id')
@@ -35,7 +47,11 @@ export class ServicesController {
 
   @Patch(':id')
   @Roles(ClinicRole.OWNER, ClinicRole.ADMIN)
-  update(@CurrentUser() user: JwtPayload, @Param('id') id: string, @Body() dto: UpdateServiceDto) {
+  update(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() dto: UpdateServiceDto,
+  ) {
     return this.servicesService.update(user.clinicId, id, dto);
   }
 
